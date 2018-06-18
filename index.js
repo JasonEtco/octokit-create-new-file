@@ -25,7 +25,8 @@ async function createNewFile (octokit, opts) {
 
   // Create a new blob with the existing template content
   const blob = await octokit.gitdata.createBlob({
-    content: opts.file.content
+    content: opts.file.content,
+    encoding: opts.file.encoding || 'utf8'
   })
 
   const newTree = await octokit.gitdata.createTree({
