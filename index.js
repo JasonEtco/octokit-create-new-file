@@ -1,4 +1,10 @@
-const slugify = require('slugify')
+/**
+ * Generate a random string
+ */
+const generateRandomString = () => (
+  Math.random().toString(36).substring(2, 15) +
+  Math.random().toString(36).substring(2, 15)
+)
 
 /**
  * Create a new file on a new branch and open a pull request
@@ -8,7 +14,7 @@ const slugify = require('slugify')
  * @returns {Promise<Object>}
  */
 async function createNewFile (octokit, opts) {
-  const branchName = opts.pr.branch || `create-${slugify(opts.file.path, { lower: true })}`
+  const branchName = opts.pr.branch || `create-file-${generateRandomString()}`
 
   // Get the current "master" reference, to get the current master's sha
   const sha = await octokit.gitdata.getReference({
@@ -23,27 +29,33 @@ async function createNewFile (octokit, opts) {
     tree_sha: sha.data.object.sha
   })
 
-  // Create a new blob with the existing template content
-  const blob = await octokit.gitdata.createBlob({
-    content: opts.file.content,
-    encoding: opts.file.encoding || 'utf8'
-  })
+  const files = opts.files || [opts.file]
 
-  const newTree = await octokit.gitdata.createTree({
-    ...opts.repo,
-    tree: [{
-      path: opts.file.path,
+  const blobTree = await Promise.all(files.map(async file => {
+    // Create a new blob with the existing template content
+    const blob = await octokit.gitdata.createBlob({
+      content: file.content,
+      encoding: file.encoding || 'utf8'
+    })
+
+    return {
+      path: file.path,
       sha: blob.data.sha,
       mode: '100644',
       type: 'blob'
-    }],
+    }
+  }))
+
+  const newTree = await octokit.gitdata.createTree({
+    ...opts.repo,
+    tree: blobTree,
     base_tree: tree.data.sha
   })
 
   // Create a commit and a reference using the new tree
   const newCommit = await octokit.gitdata.createCommit({
     ...opts.repo,
-    message: opts.commitMessage || `Create ${opts.file.path}`,
+    message: opts.commitMessage || 'Create file(s)',
     parents: [sha.data.object.sha],
     tree: newTree.data.sha
   })
@@ -55,7 +67,7 @@ async function createNewFile (octokit, opts) {
 
   const pr = await octokit.pullRequests.create({
     ...opts.repo,
-    title: opts.pr.title || `Create ${opts.file.path}`,
+    title: opts.pr.title || 'Create file(s)',
     body: opts.pr.body,
     head: branchName,
     base: opts.pr.base || 'master'
