@@ -29,20 +29,26 @@ async function createNewFile (octokit, opts) {
     tree_sha: sha.data.object.sha
   })
 
-  // Create a new blob with the existing template content
-  const blob = await octokit.gitdata.createBlob({
-    content: opts.file.content,
-    encoding: opts.file.encoding || 'utf8'
-  })
+  const files = opts.files || [opts.file]
 
-  const newTree = await octokit.gitdata.createTree({
-    ...opts.repo,
-    tree: [{
-      path: opts.file.path,
+  const blobTree = await Promise.all(files.map(async file => {
+    // Create a new blob with the existing template content
+    const blob = await octokit.gitdata.createBlob({
+      content: file.content,
+      encoding: file.encoding || 'utf8'
+    })
+
+    return {
+      path: file.path,
       sha: blob.data.sha,
       mode: '100644',
       type: 'blob'
-    }],
+    }
+  }))
+
+  const newTree = await octokit.gitdata.createTree({
+    ...opts.repo,
+    tree: blobTree,
     base_tree: tree.data.sha
   })
 
