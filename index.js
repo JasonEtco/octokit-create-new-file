@@ -1,4 +1,10 @@
-const slugify = require('slugify')
+/**
+ * Generate a random string
+ */
+const generateRandomString = () => (
+  Math.random().toString(36).substring(2, 15) +
+  Math.random().toString(36).substring(2, 15)
+)
 
 /**
  * Create a new file on a new branch and open a pull request
@@ -8,7 +14,7 @@ const slugify = require('slugify')
  * @returns {Promise<Object>}
  */
 async function createNewFile (octokit, opts) {
-  const branchName = opts.pr.branch || `create-${slugify(opts.file.path, { lower: true })}`
+  const branchName = opts.pr.branch || `create-file-${generateRandomString()}`
 
   // Get the current "master" reference, to get the current master's sha
   const sha = await octokit.gitdata.getReference({
