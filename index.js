@@ -49,7 +49,7 @@ async function createNewFile (octokit, opts) {
   // Create a commit and a reference using the new tree
   const newCommit = await octokit.gitdata.createCommit({
     ...opts.repo,
-    message: opts.commitMessage || `Create ${opts.file.path}`,
+    message: opts.commitMessage || 'Create file(s)',
     parents: [sha.data.object.sha],
     tree: newTree.data.sha
   })
@@ -61,7 +61,7 @@ async function createNewFile (octokit, opts) {
 
   const pr = await octokit.pullRequests.create({
     ...opts.repo,
-    title: opts.pr.title || `Create ${opts.file.path}`,
+    title: opts.pr.title || 'Create file(s)',
     body: opts.pr.body,
     head: branchName,
     base: opts.pr.base || 'master'
